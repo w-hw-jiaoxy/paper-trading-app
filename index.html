@@ -199,7 +199,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
   <div id="tradeList"></div>
   <h2 class="sec">已清仓（近5笔）</h2>
   <div id="tradeTrades"></div>
-  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1245</span></div>
+  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1258</span></div>
 </div>
 
 <!-- 资讯 -->
@@ -729,7 +729,7 @@ var RT=(function(){
     var o=bjParts();if(!o)return false;
     if(o.weekday==='Sat'||o.weekday==='Sun')return false;
     var t=(+o.hour)*60+(+o.minute);
-    return (t>=555&&t<=695)||(t>=780&&t<=905); /* 09:15-11:35, 13:00-15:05 北京时间 */
+    return t>=555&&t<=905; /* 09:15-15:05 北京时间（含午休；腾讯午间返回11:30定格价，即当前价） */
   }
   function today8(){var o=bjParts();return o?o.year+o.month+o.day:null;}
   function findTs(f){for(var i=0;i<f.length;i++){if(/^\d{14}$/.test(f[i]))return f[i];}return null;}
