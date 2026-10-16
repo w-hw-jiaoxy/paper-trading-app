@@ -805,7 +805,7 @@ var RT=(function(){
               cv=parseInt(p[2],10)||0,
               ca=parseFloat(p[3])||0;
           mins.push([hm,px,Math.max(0,cv-pcv)]);
-          avgs.push([hm,cv>0?+(ca/cv).toFixed(3):px]);
+          avgs.push([hm,cv>0?+(ca/(cv*100)).toFixed(3):px]);
           pcv=cv;
         });
         if(!mins.length)return;
