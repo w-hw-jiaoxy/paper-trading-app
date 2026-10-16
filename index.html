@@ -65,12 +65,22 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 #tab-trade .acct{font-size:13px;padding:9px 12px}
 #tab-trade .colhead{font-size:12px;padding:7px 12px;background:#fafafa;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;margin-top:8px}
 #tab-trade .colhead .arr{font-size:9px;color:#bbb}
-#tab-trade .hold{padding:9px 12px}
-#tab-trade .hold-top{margin-bottom:5px}
-#tab-trade .hold-grid{gap:3px 0}
-#tab-trade .hnm{font-size:16px}
-#tab-trade .hcode{font-size:11px}
-#tab-trade .hold .rt-pnl{font-size:17px}
+#tab-trade .hold{padding:0;border-bottom:1px solid #f5f5f5}
+#tab-trade .hgrid{display:grid;grid-template-columns:1.25fr 1fr 0.85fr 0.95fr;padding:10px 12px 2px}
+#tab-trade .hgrid>div+div{text-align:right}
+#tab-trade .hnm{font-size:16px;font-weight:600;color:#1a1a1a}
+#tab-trade .hmv{font-size:13px;color:#666;margin-top:4px;font-variant-numeric:tabular-nums}
+#tab-trade .hpnl{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+#tab-trade .hpct{font-size:12px;margin-top:4px;font-variant-numeric:tabular-nums}
+#tab-trade .hsh{font-size:15px;color:#1a1a1a;font-variant-numeric:tabular-nums}
+#tab-trade .hsh2{font-size:12px;color:#999;margin-top:4px;font-variant-numeric:tabular-nums}
+#tab-trade .hcost{font-size:15px;color:#1a1a1a;font-variant-numeric:tabular-nums}
+#tab-trade .hpx{font-size:12px;color:#999;margin-top:4px;font-variant-numeric:tabular-nums}
+#tab-trade .hsub{font-size:11px;color:#bbb;padding:1px 12px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tab-trade .colhead{display:grid;grid-template-columns:1.25fr 1fr 0.85fr 0.95fr}
+#tab-trade .colhead span{text-align:right}
+#tab-trade .colhead span:first-child{text-align:left}
+#tab-trade .dpct{font-size:12px;font-weight:400;margin-left:5px}
 /* 底部导航 */
 .bottomnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #e8e8e8;display:flex;padding:6px 0 12px;z-index:30}
 .bottomnav div{flex:1;text-align:center;font-size:11px;color:#8a8a8a}
@@ -174,7 +184,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
     <div class="nrow">
       <div><span class="lb">总资产<i class="ldot" id="rtEst" style="display:none"></i> <span class="eye" id="eye">👁</span></span><div class="big amt" id="nEquity"></div></div>
       <div><span class="lb">浮动盈亏</span><div class="big amt" id="nFloat"></div></div>
-      <div><span class="lb">当日参考盈亏</span><div class="big amt" id="nDay"></div></div>
+      <div><span class="lb">当日参考盈亏</span><div class="big"><span id="nDay"></span><span class="dpct" id="nDayPct"></span></div></div>
     </div>
     <div class="nrow">
       <div><span class="lb">总市值</span><div class="vl amt" id="nMv"></div></div>
@@ -187,7 +197,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
   <div id="tradeList"></div>
   <h2 class="sec">已清仓（近5笔）</h2>
   <div id="tradeTrades"></div>
-  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1112</span></div>
+  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1135</span></div>
 </div>
 
 <!-- 资讯 -->
@@ -350,6 +360,7 @@ $('eye').onclick=function(){
   set('nEquity',fmt(D.equity));
   set('nFloat',sgn(D.float_pnl),cls(D.float_pnl));
   set('nDay',D.day_pnl?sgn(D.day_pnl):'--',cls(D.day_pnl));
+  if(D.day_pnl){var _dr=D.day_pnl/(D.equity-D.day_pnl)*100,_de=$('nDayPct');_de.textContent=sgn(_dr)+'%';_de.classList.add(cls(D.day_pnl));}
   set('nMv',fmt(D.equity-D.cash));
   set('nCash',fmt(D.cash));set('nCash2',fmt(D.cash));
   $('tradeDataLine').textContent='数据截至 '+(D.date_md||'')+' 收盘';
@@ -357,15 +368,13 @@ $('eye').onclick=function(){
   if(!D.holdings.length)h='<div class="empty"><div style="font-size:16px">没有持仓数据</div><div class="muted" style="margin-top:6px">空仓也是一种仓位</div></div>';
   D.holdings.forEach(function(r){
     h+='<div class="hold" data-code="'+r.code+'">'
-      +'<div class="hold-top"><div><div class="hnm">'+r.name+'</div><div class="hcode">'+r.code+'</div></div>'
-      +'<div style="text-align:right"><div class="vl rt-pnl '+cls(r.pnl)+'">'+sgn(r.pnl)+'</div>'
-      +'<div class="muted rt-pnlpct '+cls(r.pnl_pct)+'">'+sgn(r.pnl_pct)+'%</div></div></div>'
-      +'<div class="hold-grid">'
-      +'<div><span class="lb">市值</span><span class="vl rt-mv">'+fmt(r.mv)+'</span></div>'
-      +'<div><span class="lb">持仓/可用</span><span class="vl">'+r.shares+'/'+r.shares+'</span></div>'
-      +'<div><span class="lb">成本/现价</span><span class="vl">'+fmt(r.entry_price)+' / <span class="rt-px">'+fmt(r.px)+'</span></span></div>'
-      +'<div><span class="lb">止损/目标</span><span class="vl"><span class="dn">'+fmt(r.stop)+'</span> / <span class="up">'+fmt(r.target)+'</span></span></div>'
-      +'</div><div class="muted" style="margin-top:6px">已持'+r.days_held+'天 · '+r.score+'分入选</div></div>';
+      +'<div class="hgrid">'
+      +'<div><div class="hnm">'+r.name+'</div><div class="hmv rt-mv">'+fmt(r.mv)+'</div></div>'
+      +'<div><div class="hpnl rt-pnl '+cls(r.pnl)+'">'+sgn(r.pnl)+'</div><div class="hpct rt-pnlpct '+cls(r.pnl_pct)+'">'+sgn(r.pnl_pct)+'%</div></div>'
+      +'<div><div class="hsh">'+r.shares+'</div><div class="hsh2">'+r.shares+'</div></div>'
+      +'<div><div class="hcost">'+fmt(r.entry_price)+'</div><div class="hpx rt-px">'+fmt(r.px)+'</div></div>'
+      +'</div>'
+      +'<div class="hsub">'+r.code+' · 止损'+fmt(r.stop)+' · 目标'+fmt(r.target)+' · 已持'+r.days_held+'天 · '+r.score+'分入选</div></div>';
   });
   $('tradeList').innerHTML=h;
   var t='';
@@ -755,6 +764,7 @@ var RT=(function(){
     setC($('nEquity'),fmt(eq));
     setC($('nFloat'),sgn(pnl),cls(pnl));
     setC($('nDay'),sgn(day),cls(day));
+    var _dpe=$('nDayPct');if(_dpe){var _dr=(day&&eq)?day/(eq-day)*100:0;_dpe.textContent=day?sgn(_dr)+'%':'';_dpe.classList.remove('up','dn');if(day)_dpe.classList.add(cls(day));}
     setC($('nMv'),fmt(mv));
     var pp=$('posPct');if(pp)pp.textContent='仓位 '+(eq?(mv/eq*100).toFixed(1):0)+'%';
   }
