@@ -56,17 +56,21 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .vl,.big{font-variant-numeric:tabular-nums}
 /* 交易页紧凑排版（仿真券商密度，只作用于交易 tab） */
 #tab-trade .lb{font-size:12px}
-#tab-trade .vl{font-size:14px}
-#tab-trade .big{font-size:20px}
-#tab-trade .nums{padding:2px 14px 10px}
-#tab-trade .nrow{padding:7px 0}
-#tab-trade .acct{font-size:13px;padding:10px 14px}
-#tab-trade .colhead{font-size:12px;padding:8px 14px}
-#tab-trade .hold{padding:10px 12px}
-#tab-trade .hold-top{margin-bottom:6px}
-#tab-trade .hold-grid{gap:4px 0}
-#tab-trade .hnm{font-size:15px}
+#tab-trade .vl{font-size:15px}
+#tab-trade #nEquity.big{font-size:26px;font-weight:700;letter-spacing:-.5px}
+#tab-trade #nFloat.big,#tab-trade #nDay.big{font-size:19px;font-weight:700}
+#tab-trade .nums{padding:2px 12px 8px}
+#tab-trade .nrow{padding:6px 0}
+#tab-trade .nrow>div+div{padding-left:10px}
+#tab-trade .acct{font-size:13px;padding:9px 12px}
+#tab-trade .colhead{font-size:12px;padding:7px 12px;background:#fafafa;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;margin-top:8px}
+#tab-trade .colhead .arr{font-size:9px;color:#bbb}
+#tab-trade .hold{padding:9px 12px}
+#tab-trade .hold-top{margin-bottom:5px}
+#tab-trade .hold-grid{gap:3px 0}
+#tab-trade .hnm{font-size:16px}
 #tab-trade .hcode{font-size:11px}
+#tab-trade .hold .rt-pnl{font-size:17px}
 /* 底部导航 */
 .bottomnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #e8e8e8;display:flex;padding:6px 0 12px;z-index:30}
 .bottomnav div{flex:1;text-align:center;font-size:11px;color:#8a8a8a}
@@ -177,7 +181,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
     </div>
     <div class="muted" id="tradeDataLine" style="font-size:12px;padding:2px 0 6px"></div>
   </div>
-  <div class="colhead"><span>市值</span><span>盈亏 ▼</span><span>持仓/可用</span><span>成本/现价</span></div>
+  <div class="colhead"><span>市值 <span class="arr">↕</span></span><span>盈亏 <span class="arr">▼</span></span><span>持仓/可用 <span class="arr">↕</span></span><span>成本/现价</span></div>
   <div id="tradeList"></div>
   <h2 class="sec">已清仓（近5笔）</h2>
   <div id="tradeTrades"></div>
