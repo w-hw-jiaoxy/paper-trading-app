@@ -11,7 +11,7 @@
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f2f3f5;color:#333;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:70px}
 .up{color:#e60012}.dn{color:#1a9e54}.muted{color:#999;font-size:12px}
 .red{background:#e62e2e}
-.rtbadge{font-size:11px;color:#1a9e54;border:1px solid #1a9e54;border-radius:10px;padding:1px 8px;margin-left:4px;font-weight:400;white-space:nowrap}
+.ldot{width:6px;height:6px;border-radius:50%;background:#22a355;margin-left:6px;vertical-align:1px}
 .tabpage{display:none}.tabpage.on{display:block}
 /* 顶栏 */
 .topbar{background:#e62e2e;color:#fff;padding:10px 12px;position:sticky;top:0;z-index:20}
@@ -57,8 +57,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 /* 交易页紧凑排版（仿真券商密度，只作用于交易 tab） */
 #tab-trade .lb{font-size:12px}
 #tab-trade .vl{font-size:15px}
-#tab-trade #nEquity.big{font-size:22px;font-weight:700;letter-spacing:-.5px}
-#tab-trade #nFloat.big,#tab-trade #nDay.big{font-size:19px;font-weight:700}
+#tab-trade #nEquity.big{font-size:20px;font-weight:700;letter-spacing:-.5px}
+#tab-trade #nFloat.big,#tab-trade #nDay.big{font-size:17px;font-weight:600}
 #tab-trade .nums{padding:2px 12px 8px}
 #tab-trade .nrow{padding:6px 0}
 #tab-trade .nrow>div+div{padding-left:10px}
@@ -172,7 +172,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
   <div class="acct"><span>🇨🇳 人民币账户（模拟）</span><span class="posbadge" id="posPct"></span></div>
   <div class="nums">
     <div class="nrow">
-      <div><span class="lb">总资产 <span id="rtEst" class="rtbadge" style="display:none">● 实时估算</span> <span class="eye" id="eye">👁</span></span><div class="big amt" id="nEquity"></div></div>
+      <div><span class="lb">总资产<i class="ldot" id="rtEst" style="display:none"></i> <span class="eye" id="eye">👁</span></span><div class="big amt" id="nEquity"></div></div>
       <div><span class="lb">浮动盈亏</span><div class="big amt" id="nFloat"></div></div>
       <div><span class="lb">当日参考盈亏</span><div class="big amt" id="nDay"></div></div>
     </div>
@@ -187,7 +187,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
   <div id="tradeList"></div>
   <h2 class="sec">已清仓（近5笔）</h2>
   <div id="tradeTrades"></div>
-  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1100</span></div>
+  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1112</span></div>
 </div>
 
 <!-- 资讯 -->
@@ -889,6 +889,7 @@ var RT=(function(){
     });
     if(any){
       var b=$('rtEst');if(b)b.style.display='inline-block';
+      var tl=$('tradeDataLine');if(tl)tl.innerHTML='<span style="color:#22a355">盘中实时估算 · 约30秒刷新</span>';
       if(curStock&&$('stockPage').classList.contains('on')&&liveTs)
         $('stkDateLine').innerHTML='<span style="color:#4ade80">● 实时 '+liveTs.slice(8,10)+':'+liveTs.slice(10,12)+'</span>';
       if(curStock&&curStock.liveMin&&curStock.liveMin.length){
