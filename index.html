@@ -57,7 +57,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 /* 交易页紧凑排版（仿真券商密度，只作用于交易 tab） */
 #tab-trade .lb{font-size:12px}
 #tab-trade .vl{font-size:15px}
-#tab-trade #nEquity.big{font-size:26px;font-weight:700;letter-spacing:-.5px}
+#tab-trade #nEquity.big{font-size:22px;font-weight:700;letter-spacing:-.5px}
 #tab-trade #nFloat.big,#tab-trade #nDay.big{font-size:19px;font-weight:700}
 #tab-trade .nums{padding:2px 12px 8px}
 #tab-trade .nrow{padding:6px 0}
@@ -152,6 +152,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
     <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:14px">
       <span>主板成交额总计 <b id="amtT"></b></span><span class="muted">较昨日 <b id="amtC"></b></span>
     </div>
+    <div class="muted" style="font-size:11px;margin-top:6px">涨跌家数截至今晨随页面生成，盘中不刷新 · 三大指数为实时</div>
   </div>
   <div class="card"><h3>📝 今日小结</h3><div id="mkComment" style="font-size:14px;line-height:1.9"></div></div>
 </div>
@@ -186,7 +187,7 @@ h2.sec{font-size:14px;color:#666;padding:14px 14px 2px;font-weight:600}
   <div id="tradeList"></div>
   <h2 class="sec">已清仓（近5笔）</h2>
   <div id="tradeTrades"></div>
-  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1048</span></div>
+  <div class="foot">模拟盘按六层体系自动执行，不支持手动委托<br>纸面记录，仅用于训练执行力，不构成任何买卖建议<br><span class="muted">版本 v1016-1100</span></div>
 </div>
 
 <!-- 资讯 -->
@@ -288,7 +289,7 @@ $('eye').onclick=function(){
   D.holdings.forEach(function(h){
     hh+='<div class="hdrow" data-code="'+h.code+'"><div><span class="hnm">'+h.name+'</span> <span class="hcode">'+h.code+'</span></div>'
       +'<div style="text-align:right"><div class="h-pct '+cls(h.day_pct)+'">'+sgn(h.day_pct)+'%</div>'
-      +'<div class="muted">浮盈 '+sgn(h.pnl)+'</div></div></div>';
+      +'<div class="muted h-pnl">浮盈 '+sgn(h.pnl)+'</div></div></div>';
   });
   $('homeHold').innerHTML=hh;
   $('homeComment').innerHTML='今日主板上涨 <b class="up">'+D.up+'</b> 家、下跌 <b class="dn">'+D.down+'</b> 家，'
@@ -744,6 +745,7 @@ var RT=(function(){
     document.querySelectorAll('#homeHold .hdrow').forEach(function(row){
       if(row.dataset.code!==h.code)return;
       setC(row.querySelector('.h-pct'),sgn(h.day_pct)+'%',cls(h.day_pct));
+      setC(row.querySelector('.h-pnl'),'浮盈 '+sgn(h.pnl),cls(h.pnl));
     });
   }
   function updSummary(){
