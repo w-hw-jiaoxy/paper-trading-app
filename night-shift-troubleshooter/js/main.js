@@ -38,7 +38,7 @@
     { icon: '📱', name: '用户终端' }, { icon: '🔀', name: '接入交换' }, { icon: '🧭', name: '汇聚路由' },
     { icon: '🧱', name: '出口防火墙' }, { icon: '🖥', name: '核心服务器' }
   ];
-  var SHIFT = 90, WARN_TIME = 5;
+  var SHIFT = 90, WARN_TIME = 9;
 
   // ---------- 布局 ----------
   var pts = [], segLen = [], totalLen = 0, nodeDist = [];
@@ -113,6 +113,10 @@
     if (state !== 'play') return;
     elapsed += dt;
     if (elapsed >= SHIFT || sla <= 0) { state = 'over'; if (score > getBest()) setBest(score); return; }
+    if (sel && faults.indexOf(sel) >= 0) {
+      for (var fp = particles.length - 1; fp >= 0; fp--) { var fpt = particles[fp]; fpt.life -= dt; fpt.x += fpt.vx * dt; fpt.y += fpt.vy * dt; if (fpt.life <= 0) particles.splice(fp, 1); }
+      return; // 诊断模式:故障不恶化、包不丢,只有夜班总计时在走
+    }
     spawnT -= dt;
     var interval = 5.2 - 2.4 * (elapsed / SHIFT);
     if (spawnT <= 0 && faults.length < 3) { spawnFault(); spawnT = interval * (0.8 + Math.random() * 0.5); }
@@ -152,7 +156,7 @@
     txt('🛠', W / 2, H * 0.08, '50px sans-serif', C.txt, 'center');
     txt('夜班排障王', W / 2, H * 0.08 + 66, 'bold 32px sans-serif', C.txt, 'center');
     txt('数据包护送行动 · PACKET ESCORT', W / 2, H * 0.08 + 108, '11px sans-serif', C.sub, 'center');
-    var lines = ['数据包正从用户终端赶往核心服务器,', '路上设备会不断出故障:先亮黄灯预警,', '5 秒后变红灯开始吞包。', '点中出故障的设备,选对处置把它修好——', '手慢了,SLA 就没了。撑满 90 秒夜班!'];
+    var lines = ['数据包正从用户终端赶往核心服务器,', '路上设备会不断出故障:先亮黄灯预警,', '9 秒后变红灯开始吞包。点开故障设备会', '冻结全场,安心看完题再选处置——', '代价是夜班总时间照走。撑满 90 秒!'];
     for (var i = 0; i < lines.length; i++) txt(lines[i], W / 2, H * 0.30 + i * 23, '14px sans-serif', C.sub, 'center');
     if (getBest() > 0) txt('历史最高分:' + getBest(), W / 2, H * 0.30 + 128, '13px sans-serif', C.amber, 'center');
     bigButton('▶  开始护送', 40, H * 0.56, W - 80, 54, C.blue, startGame);
@@ -209,16 +213,17 @@
     rr(x, y, w, h, 10); ctx.fillStyle = C.panel; ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
     if (sel && faults.indexOf(sel) >= 0) {
       var f = sel, crit = f.age >= WARN_TIME;
-      txt(f.type.icon + ' ' + f.type.name + (crit ? '  🚨 正在丢包!' : '  ⚠ 预警中,快修!'), x + 12, y + 9, 'bold 14px sans-serif', crit ? C.red : C.amber);
+      txt(f.type.icon + ' ' + f.type.name + (crit ? '  🚨 正在丢包!' : '  ⚠ 预警中'), x + 12, y + 9, 'bold 14px sans-serif', crit ? C.red : C.amber);
+      txt('⏸ 诊断中·已冻结', x + w - 12, y + 11, '11px sans-serif', C.sub, 'right');
       var ly = y + 32;
-      var sl = wrap(f.type.sym, w - 24, '12px sans-serif');
-      for (var i = 0; i < sl.length && i < 2; i++) { txt(sl[i], x + 12, ly, '12px sans-serif', C.sub); ly += 16; }
+      var sl = wrap(f.type.sym, w - 24, '13px sans-serif');
+      for (var i = 0; i < sl.length && i < 2; i++) { txt(sl[i], x + 12, ly, '13px sans-serif', C.sub); ly += 18; }
       txt('日志:' + f.type.log, x + 12, ly + 1, '11px monospace', '#b9f6d2'); ly += 22;
       for (var k = 0; k < f.uiOpts.length; k++) {
         (function (optIdx, oy) {
           var oh = 33;
           rr(x + 10, oy, w - 20, oh, 8); ctx.fillStyle = C.btn; ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
-          txt('▸ ' + f.type.opts[optIdx], x + 20, oy + 8, '13px sans-serif', C.txt);
+          txt('▸ ' + f.type.opts[optIdx], x + 20, oy + 7, '14px sans-serif', C.txt);
           buttons.push({ x: x + 10, y: oy, w: w - 20, h: oh, fn: function () { chooseFix(f, optIdx); } });
         })(f.uiOpts[k], ly + k * 39);
       }
