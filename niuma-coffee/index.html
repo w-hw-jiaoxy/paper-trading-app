@@ -159,7 +159,7 @@ function ensureMusic(){
       MUS.nextT = MUS.ctx.currentTime + 0.06; MUS.step = 0;
       MUS.timer = setInterval(mSched, 90);
     }
-    if(MUS.ctx.state === "suspended") MUS.ctx.resume();
+    if(MUS.ctx.state === "suspended"){ const p = MUS.ctx.resume(); if(p && p.catch) p.catch(()=>{}); }
   }catch(e){}
 }
 function stopMusic(){ if(MUS.ctx) MUS.ctx.suspend(); }
@@ -685,6 +685,7 @@ function completeDrink(c){
 }
 function tapBottle(i){
   if(S.over || S.anim) return;
+  ensureMusic();
   beep(520, .05);
   if(S.sel<0){ if(S.board[i].length && !isDone(S.board[i])){ S.sel=i; render(); } return; }
   if(S.sel===i){ S.sel=-1; render(); return; }
@@ -832,7 +833,7 @@ function ensureMusic(){
       MUS.nextT = MUS.ctx.currentTime + 0.06; MUS.step = 0;
       MUS.timer = setInterval(mSched, 90);
     }
-    if(MUS.ctx.state === "suspended") MUS.ctx.resume();
+    if(MUS.ctx.state === "suspended"){ const p = MUS.ctx.resume(); if(p && p.catch) p.catch(()=>{}); }
   }catch(e){}
 }
 function stopMusic(){ if(MUS.ctx) MUS.ctx.suspend(); }
@@ -867,7 +868,10 @@ $("reset-yes").onclick = ()=>{ localStorage.removeItem("niunma"); location.reloa
 $("btn-home").onclick = ()=> showHome();
 $("btn-mus").onclick = ()=>{ S.musOn = !S.musOn; persist(); syncMusBtn(); if(S.musOn) ensureMusic(); else stopMusic(); };
 syncMusBtn();
-document.addEventListener("pointerdown", function once(){ ensureMusic(); document.removeEventListener("pointerdown", once); });
+document.addEventListener("pointerdown", function wake(){
+  ensureMusic();
+  if(MUS.ctx && MUS.ctx.state === "running") document.removeEventListener("pointerdown", wake);
+});
 
 startLevel(S.level);
 showHome();
