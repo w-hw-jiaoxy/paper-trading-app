@@ -112,7 +112,60 @@
   .rider.leaving { animation:walkout .48s ease-in forwards; }
   @keyframes walkout { 0%{ transform:translateX(0); opacity:1;} 30%{ transform:translateX(20px) translateY(-6px); opacity:1;} 60%{ transform:translateX(40px) translateY(0); opacity:.85;} 100%{ transform:translateX(64px) translateY(-3px); opacity:0;} }
 
-  /* ---------- 封面 ---------- */
+  
+/* ---------- 背景音乐（合成小调，无音频文件） ---------- */
+const MUS = { ctx:null, gain:null, timer:null, nextT:0, step:0 };
+const M_BARS = [
+  { root:36, pad:[60,64,67,71], mel:[76,-1,79,-1, 81,79,76,-1, 74,-1,76,-1, -1,-1,-1,-1] },
+  { root:33, pad:[57,60,64,67], mel:[76,-1,72,-1, 76,79,81,-1, 79,76,72,-1, -1,-1,-1,-1] },
+  { root:38, pad:[62,65,69,72], mel:[74,-1,77,-1, 81,77,74,-1, 72,-1,74,-1, -1,-1,-1,-1] },
+  { root:31, pad:[59,62,65,67], mel:[74,-1,71,-1, 74,79,74,-1, 71,-1,-1,-1, -1,-1,-1,-1] }
+];
+const M_STEP = 60/96/4;
+function mFreq(m){ return 440 * Math.pow(2, (m-69)/12); }
+function mNote(m, t, dur, vol, type){
+  const o = MUS.ctx.createOscillator(), g = MUS.ctx.createGain();
+  o.type = type || "triangle"; o.frequency.value = mFreq(m);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(MUS.gain); o.start(t); o.stop(t + dur + 0.05);
+}
+function mHat(t){
+  const len = 0.03, buf = MUS.ctx.createBuffer(1, MUS.ctx.sampleRate * len, MUS.ctx.sampleRate);
+  const d = buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+  const s = MUS.ctx.createBufferSource(); s.buffer = buf;
+  const f = MUS.ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7000;
+  const g = MUS.ctx.createGain(); g.gain.value = 0.05;
+  s.connect(f); f.connect(g); g.connect(MUS.gain); s.start(t);
+}
+function mSched(){
+  while(MUS.nextT < MUS.ctx.currentTime + 0.22){
+    const bar = M_BARS[Math.floor(MUS.step/16) % 4], s16 = MUS.step % 16, t = MUS.nextT;
+    if(s16 === 0){ bar.pad.forEach(m => mNote(m, t, 1.6, 0.016, "sine")); mNote(bar.root + 24, t, 0.5, 0.10, "sine"); }
+    if(s16 === 8) mNote(bar.root + 31, t, 0.4, 0.07, "sine");
+    const mel = bar.mel[s16];
+    if(mel > 0) mNote(mel, t, 0.34, 0.055);
+    if(s16 % 4 === 2) mHat(t);
+    MUS.nextT += M_STEP; MUS.step++;
+  }
+}
+function ensureMusic(){
+  if(!S.musOn) return;
+  try{
+    if(!MUS.ctx){
+      MUS.ctx = new (window.AudioContext||window.webkitAudioContext)();
+      MUS.gain = MUS.ctx.createGain(); MUS.gain.gain.value = 0.9; MUS.gain.connect(MUS.ctx.destination);
+      MUS.nextT = MUS.ctx.currentTime + 0.06; MUS.step = 0;
+      MUS.timer = setInterval(mSched, 90);
+    }
+    if(MUS.ctx.state === "suspended") MUS.ctx.resume();
+  }catch(e){}
+}
+function stopMusic(){ if(MUS.ctx) MUS.ctx.suspend(); }
+function syncMusBtn(){ $("btn-mus").textContent = S.musOn ? "🔊" : "🔇"; }
+
+/* ---------- 封面 ---------- */
   #home { position:fixed; inset:0; z-index:70; background:linear-gradient(180deg,#bfe6ff 0%, #ffe9c9 46%, #f7c489 100%); overflow-y:auto; }
   #home.hidden { display:none; }
   .home-inner { max-width:430px; margin:0 auto; padding:14px 16px 30px; text-align:center; position:relative; }
@@ -135,7 +188,7 @@
   .sbtn { flex:1; border:2.5px solid #f0c48a; background:#fffdf8; border-radius:16px; padding:9px 2px 7px; font-size:12.5px; font-weight:800; color:#7c3f16; cursor:pointer; box-shadow:0 4px 0 #e0aa5e; }
   .sbtn .sic { display:block; font-size:21px; margin-bottom:1px; }
   .sbtn:active { transform:translateY(3px); box-shadow:0 1px 0 #e0aa5e; }
-  .homebtn { border:2.5px solid #f0c48a; background:#fffdf8; border-radius:999px; width:38px; height:38px; font-size:17px; cursor:pointer; box-shadow:0 3px 0 #e0aa5e; }
+  .homebtn { border:2.5px solid #f0c48a; background:#fffdf8; border-radius:999px; width:34px; height:34px; font-size:15px; cursor:pointer; box-shadow:0 3px 0 #e0aa5e; flex:none; }
   .shake { animation:shk .3s; }
   @keyframes shk { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
 </style>
@@ -145,7 +198,7 @@
   <header>
     <div class="logo">牛马咖啡 ☕<small>NIUMA COFFEE · 打工人的店</small></div>
     <div class="lvlbadge" id="lvlbadge">第 1 关</div>
-    <div style="display:flex;gap:6px;align-items:center"><div class="money" id="money">💰 ¥0</div><button class="homebtn" id="btn-home" title="回封面">🏠</button></div>
+    <div style="display:flex;gap:6px;align-items:center"><div class="money" id="money">💰 ¥0</div><button class="homebtn" id="btn-mus" title="音乐开关">🔊</button><button class="homebtn" id="btn-home" title="回封面">🏠</button></div>
   </header>
 
   <div class="window" id="winScene">
@@ -289,10 +342,10 @@ const S = {
   earnDrink: 0, earnTip: 0, doneColors: new Set(),
   over: false, anim: false,
   extraUsed: false, adUsed: false, rescueUsed: false,
-  endless: false, homeOpen: true,
+  endless: false, homeOpen: true, musOn: save.mus !== false,
   tick: null
 };
-function persist(){ localStorage.setItem("niunma", JSON.stringify({level:S.level, unlocked:S.unlocked, money:S.money, dex:S.dex})); }
+function persist(){ localStorage.setItem("niunma", JSON.stringify({level:S.level, unlocked:S.unlocked, money:S.money, dex:S.dex, mus:S.musOn})); }
 /* ---------- 难度曲线（沿用 v0.5 实测口径） ---------- */
 function colorsForLevel(lv){ return Math.min(9, 4 + Math.floor(lv/2)); }
 function capForLevel(lv){ return lv >= 10 ? 6 : (lv >= 5 ? 5 : 4); }
@@ -732,6 +785,59 @@ $("fail-ad").onclick = ()=>{
   fakeAd(()=>{ S.adUsed=true; revive(6); msg("续命成功：+6 步、差评-1！"); });
 };
 
+
+/* ---------- 背景音乐（合成小调，无音频文件） ---------- */
+const MUS = { ctx:null, gain:null, timer:null, nextT:0, step:0 };
+const M_BARS = [
+  { root:36, pad:[60,64,67,71], mel:[76,-1,79,-1, 81,79,76,-1, 74,-1,76,-1, -1,-1,-1,-1] },
+  { root:33, pad:[57,60,64,67], mel:[76,-1,72,-1, 76,79,81,-1, 79,76,72,-1, -1,-1,-1,-1] },
+  { root:38, pad:[62,65,69,72], mel:[74,-1,77,-1, 81,77,74,-1, 72,-1,74,-1, -1,-1,-1,-1] },
+  { root:31, pad:[59,62,65,67], mel:[74,-1,71,-1, 74,79,74,-1, 71,-1,-1,-1, -1,-1,-1,-1] }
+];
+const M_STEP = 60/96/4;
+function mFreq(m){ return 440 * Math.pow(2, (m-69)/12); }
+function mNote(m, t, dur, vol, type){
+  const o = MUS.ctx.createOscillator(), g = MUS.ctx.createGain();
+  o.type = type || "triangle"; o.frequency.value = mFreq(m);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(MUS.gain); o.start(t); o.stop(t + dur + 0.05);
+}
+function mHat(t){
+  const len = 0.03, buf = MUS.ctx.createBuffer(1, MUS.ctx.sampleRate * len, MUS.ctx.sampleRate);
+  const d = buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+  const s = MUS.ctx.createBufferSource(); s.buffer = buf;
+  const f = MUS.ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7000;
+  const g = MUS.ctx.createGain(); g.gain.value = 0.05;
+  s.connect(f); f.connect(g); g.connect(MUS.gain); s.start(t);
+}
+function mSched(){
+  while(MUS.nextT < MUS.ctx.currentTime + 0.22){
+    const bar = M_BARS[Math.floor(MUS.step/16) % 4], s16 = MUS.step % 16, t = MUS.nextT;
+    if(s16 === 0){ bar.pad.forEach(m => mNote(m, t, 1.6, 0.016, "sine")); mNote(bar.root + 24, t, 0.5, 0.10, "sine"); }
+    if(s16 === 8) mNote(bar.root + 31, t, 0.4, 0.07, "sine");
+    const mel = bar.mel[s16];
+    if(mel > 0) mNote(mel, t, 0.34, 0.055);
+    if(s16 % 4 === 2) mHat(t);
+    MUS.nextT += M_STEP; MUS.step++;
+  }
+}
+function ensureMusic(){
+  if(!S.musOn) return;
+  try{
+    if(!MUS.ctx){
+      MUS.ctx = new (window.AudioContext||window.webkitAudioContext)();
+      MUS.gain = MUS.ctx.createGain(); MUS.gain.gain.value = 0.9; MUS.gain.connect(MUS.ctx.destination);
+      MUS.nextT = MUS.ctx.currentTime + 0.06; MUS.step = 0;
+      MUS.timer = setInterval(mSched, 90);
+    }
+    if(MUS.ctx.state === "suspended") MUS.ctx.resume();
+  }catch(e){}
+}
+function stopMusic(){ if(MUS.ctx) MUS.ctx.suspend(); }
+function syncMusBtn(){ $("btn-mus").textContent = S.musOn ? "🔊" : "🔇"; }
+
 /* ---------- 封面 ---------- */
 function sumDex(){ return Object.values(S.dex).reduce((a,b)=>a+b, 0); }
 function showHome(){
@@ -743,7 +849,7 @@ function showHome(){
   $("home").classList.remove("hidden");
   window.scrollTo(0,0);
 }
-function hideHome(){ S.homeOpen = false; $("home").classList.add("hidden"); }
+function hideHome(){ S.homeOpen = false; $("home").classList.add("hidden"); ensureMusic(); }
 $("hm-hero").src = CHARS[0].img;
 $("hm-start").onclick = ()=>{ S.endless=false; hideHome(); startLevel(S.level); };
 $("hm-endless").onclick = ()=>{ S.endless=true; hideHome(); startLevel(Math.max(1, S.unlocked)); msg("无尽挑战：从第 "+Math.max(1,S.unlocked)+" 关的难度起步，一关一关往上爬！"); };
@@ -759,6 +865,10 @@ $("hm-reset").onclick = ()=> $("resetModal").classList.add("show");
 $("reset-no").onclick = ()=> $("resetModal").classList.remove("show");
 $("reset-yes").onclick = ()=>{ localStorage.removeItem("niunma"); location.reload(); };
 $("btn-home").onclick = ()=> showHome();
+$("btn-mus").onclick = ()=>{ S.musOn = !S.musOn; persist(); syncMusBtn(); if(S.musOn) ensureMusic(); else stopMusic(); };
+syncMusBtn();
+document.addEventListener("pointerdown", function once(){ ensureMusic(); document.removeEventListener("pointerdown", once); });
+
 startLevel(S.level);
 showHome();
 </script>
