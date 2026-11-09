@@ -189,6 +189,16 @@ function syncMusBtn(){ $("btn-mus").textContent = S.musOn ? "🔊" : "🔇"; }
   .sbtn .sic { display:block; font-size:21px; margin-bottom:1px; }
   .sbtn:active { transform:translateY(3px); box-shadow:0 1px 0 #e0aa5e; }
   .homebtn { border:2.5px solid #f0c48a; background:#fffdf8; border-radius:999px; width:34px; height:34px; font-size:15px; cursor:pointer; box-shadow:0 3px 0 #e0aa5e; flex:none; }
+
+  #lvlbadge { cursor:pointer; }
+  .lvlgrid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:12px; max-height:46vh; overflow-y:auto; padding:2px; }
+  .lvcell { border:none; border-radius:13px; padding:8px 0 6px; font-size:16px; font-weight:900; cursor:pointer; line-height:1.15; }
+  .lvcell .st { display:block; font-size:9.5px; letter-spacing:0; min-height:12px; }
+  .lvcell.pass { background:linear-gradient(180deg,#b5e48c,#7cc24a); color:#2f5a14; box-shadow:0 3px 0 #4e9b2e; }
+  .lvcell.now { background:linear-gradient(180deg,#ffd34d,#f5a623); color:#7c3f16; box-shadow:0 3px 0 #c46a08; animation:pulse 1.2s ease-in-out infinite; }
+  .lvcell.lock { background:#e8e2d6; color:#a08b64; cursor:not-allowed; box-shadow:0 3px 0 #c9bda3; }
+  @keyframes pulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.07);} }
+  .lvllegend { font-size:12px; color:#7c5a35; margin-top:10px; }
   .shake { animation:shk .3s; }
   @keyframes shk { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
 </style>
@@ -279,6 +289,15 @@ function syncMusBtn(){ $("btn-mus").textContent = S.musOn ? "🔊" : "🔇"; }
   <div class="row"><button id="reset-no">再想想</button><button id="reset-yes" class="gold">确认重置</button></div>
 </div></div>
 
+
+<div class="modal" id="lvlModal"><div class="card">
+  <h3>🗺️ 关卡地图</h3>
+  <p>绿色是已通关的（点任意一关可以重打），<br>橙色是你要打的下一关，灰色还没解锁。</p>
+  <div class="lvlgrid" id="lvlGrid"></div>
+  <div class="lvllegend">⭐ 是每关的历史最好成绩</div>
+  <div class="row"><button id="lvl-close" class="gold">继续营业</button></div>
+</div></div>
+
 <div class="modal" id="winModal"><div class="card">
   <h3>🎉 打烊结算</h3>
   <div class="stars" id="win-stars">⭐⭐⭐</div>
@@ -342,10 +361,10 @@ const S = {
   earnDrink: 0, earnTip: 0, doneColors: new Set(),
   over: false, anim: false,
   extraUsed: false, adUsed: false, rescueUsed: false,
-  endless: false, homeOpen: true, musOn: save.mus !== false,
+  endless: false, homeOpen: true, musOn: save.mus !== false, stars: save.stars || {},
   tick: null
 };
-function persist(){ localStorage.setItem("niunma", JSON.stringify({level:S.level, unlocked:S.unlocked, money:S.money, dex:S.dex, mus:S.musOn})); }
+function persist(){ localStorage.setItem("niunma", JSON.stringify({level:S.level, unlocked:S.unlocked, money:S.money, dex:S.dex, mus:S.musOn, stars:S.stars})); }
 /* ---------- 难度曲线（沿用 v0.5 实测口径） ---------- */
 function colorsForLevel(lv){ return Math.min(9, 4 + Math.floor(lv/2)); }
 function capForLevel(lv){ return lv >= 10 ? 6 : (lv >= 5 ? 5 : 4); }
@@ -722,6 +741,7 @@ function win(){
   if(S.level >= S.unlocked) S.unlocked = S.level+1;
   persist(); render(); confetti(); beep(990,.25);
   const stars = S.angry===0 && S.moves <= S.par + Math.ceil(slackForLevel(S.level)/2) ? 3 : (S.angry<=1 ? 2 : 1);
+  if(!S.endless){ S.stars[S.level] = Math.max(S.stars[S.level]||0, stars); persist(); }
   $("win-next").textContent = S.endless ? "继续接单 →" : "下一关 →";
   $("win-stars").textContent = "⭐".repeat(stars) + "☆".repeat(3-stars);
   $("win-total").textContent = "今日收入 ¥" + total;
@@ -866,6 +886,24 @@ $("stat-close").onclick = ()=> $("statModal").classList.remove("show");
 $("hm-reset").onclick = ()=> $("resetModal").classList.add("show");
 $("reset-no").onclick = ()=> $("resetModal").classList.remove("show");
 $("reset-yes").onclick = ()=>{ localStorage.removeItem("niunma"); location.reload(); };
+
+/* ---------- 关卡地图 ---------- */
+const LVL_MAP_MAX = 30;
+function openLevels(){
+  const g = $("lvlGrid"); g.innerHTML = "";
+  for(let lv=1; lv<=LVL_MAP_MAX; lv++){
+    const b = document.createElement("button");
+    const st = S.stars[lv] || 0;
+    if(lv < S.unlocked){ b.className = "lvcell pass"; b.innerHTML = lv + '<span class="st">' + (st ? "⭐".repeat(st) : "已通关") + '</span>'; }
+    else if(lv === S.unlocked){ b.className = "lvcell now"; b.innerHTML = lv + '<span class="st">当前关</span>'; }
+    else { b.className = "lvcell lock"; b.innerHTML = lv + '<span class="st">🔒</span>'; }
+    if(lv <= S.unlocked) b.onclick = ()=>{ $("lvlModal").classList.remove("show"); S.endless = false; startLevel(lv); };
+    g.appendChild(b);
+  }
+  $("lvlModal").classList.add("show");
+}
+$("lvlbadge").onclick = openLevels;
+$("lvl-close").onclick = ()=> $("lvlModal").classList.remove("show");
 $("btn-home").onclick = ()=> showHome();
 $("btn-mus").onclick = ()=>{ S.musOn = !S.musOn; persist(); syncMusBtn(); if(S.musOn) ensureMusic(); else stopMusic(); };
 syncMusBtn();
