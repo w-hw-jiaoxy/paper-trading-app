@@ -557,9 +557,10 @@ function render(){
   const lh = (100/S.cap).toFixed(2)+"%";
   S.board.forEach((b, i)=>{
     const d=document.createElement("div");
-    d.className = "bottle" + (S.sel===i ? " sel":"") + (isDone(b) ? " done":"");
+    const doneB = isDone(b);
+    d.className = "bottle" + (S.sel===i ? " sel":"") + (doneB ? " done":"");
     const layers = b.map((c,idx)=>{
-      const hid = S.hidden[i] && S.hidden[i][idx] && idx < b.length-1;
+      const hid = !doneB && S.hidden[i] && S.hidden[i][idx] && idx < b.length-1;
       return `<div class="layer${idx===b.length-1 ? " top":""}${hid ? " hid":""}" style="height:${lh};background:${grad(c)}">${hid ? "?" : ""}</div>`;
     }).join("");
     d.innerHTML = `<div class="neck"></div><div class="body">${layers}<div class="spacer" style="flex:1"></div></div>`;
